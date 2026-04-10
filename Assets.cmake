@@ -3,8 +3,19 @@
 file(GLOB_RECURSE AssetFiles CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/assets/*")
 list (FILTER AssetFiles EXCLUDE REGEX "/\\.DS_Store$") # We don't want the .DS_Store on macOS though...
 
+# Include the precompiled Metal shader library on macOS
+if(APPLE AND DEFINED METALLIB_OUTPUT)
+    list(APPEND AssetFiles ${METALLIB_OUTPUT})
+    set_source_files_properties(${METALLIB_OUTPUT} PROPERTIES GENERATED TRUE)
+endif()
+
 # Setup our binary data as a target called Assets
 juce_add_binary_data(Assets SOURCES ${AssetFiles})
+
+# Ensure Metal shaders are compiled before BinaryData processes them
+if(APPLE AND TARGET MetalShaders)
+    add_dependencies(Assets MetalShaders)
+endif()
 
 # Required for Linux happiness:
 # See https://forum.juce.com/t/loading-pytorch-model-using-binarydata/39997/2
